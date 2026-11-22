@@ -1,21 +1,28 @@
 import random
+import re
 
 MAX_DADOS = 30
 MAX_LADOS = 100
 
-def rolar_dados(expressao):
-   
-    try:
-        quantidade_str, lados_str = expressao.lower().split('d')
-        
-        if quantidade_str == "":
-            quantidade = 1
-        else:
-            quantidade = int(quantidade_str)
+# quantidade (opcional), a letra d, lados e, se houver, sinal e valor do modificador
+PADRAO = re.compile(r"(\d*)d(\d+)(?:\s*([+-])\s*(\d+))?", re.IGNORECASE)
 
-        lados = int(lados_str)
-    except ValueError:
-        raise ValueError("Sua entrada é inválida. (Ex: 2d6, 10d20)")
+def interpretar(expressao):
+    m = PADRAO.fullmatch(expressao.strip())
+    if m is None:
+        raise ValueError("Sua entrada é invalida. (Ex: 2d6, 10d20, 1d8+3)")
+
+    quantidade = int(m.group(1) or 1)
+    lados = int(m.group(2))
+    if m.group(3) is None:
+        modificador = 0
+    else:
+        modificador = int(m.group(3) + m.group(4))
+    return quantidade, lados, modificador
+
+def rolar_dados(expressao):
+
+    quantidade, lados, modificador = interpretar(expressao)
 
     if quantidade < 1:
         raise ValueError("A quantidade de dados deve ser pelo menos 1.")
@@ -31,7 +38,7 @@ def rolar_dados(expressao):
         valor = random.randint(1, lados)
         resultados.append(valor)
     
-    return sum(resultados), resultados
+    return sum(resultados) + modificador, resultados
 
 if __name__ == "__main__":
     try:

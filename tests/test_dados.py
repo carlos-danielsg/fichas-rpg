@@ -27,3 +27,10 @@ def test_d_sem_quantidade_e_maiuscula():
     total, rolagens = rolar_dados("D8")
     assert len(rolagens) == 1
     assert 1 <= total <= 8
+
+def test_modificador_negativo():
+    for _ in range(300):
+        total, rolagens = rolar_dados("1d20-1")
+        assert len(rolagens) == 1
+        assert total == rolagens[0] - 1
+        assert 0 <= total <= 19
