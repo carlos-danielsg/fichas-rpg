@@ -16,7 +16,7 @@ Este projeto junta tudo em um só lugar:
 - **Mestre** vê o resumo de todos os personagens da campanha e as rolagens recentes.
 - **Vários sistemas** de RPG, começando por Kids on Bikes e depois D&D 5e e Daggerheart.
 
-É um projeto pessoal de estudo, construído em fases. Hoje existe o núcleo em Python (o rolador de dados), e o site vem nas próximas fases.
+É um projeto pessoal de estudo, construído em fases. Hoje existe o núcleo em Python, com o rolador de dados e a criação de fichas pelo terminal. O site vem nas próximas fases.
 
 ## Status
 
@@ -34,23 +34,24 @@ Este projeto junta tudo em um só lugar:
 ## Funcionalidades
 
 **Prontas**
-- [x] Rolador de dados no formato `NdX` (`2d6`, `d20`), com validação de entrada
+- [x] Rolador de dados no formato `NdX` (`2d6`, `d20`), com modificador (`2d6+3`, `1d20-1`)
 - [x] Limites de 1 a 30 dados e de 2 a 100 lados
 - [x] Mensagens de erro claras para entradas inválidas
-- [x] Testes automatizados com pytest
+- [x] Criação de ficha de Kids on Bikes pelo terminal, com validações, perguntas repetidas quando a resposta é inválida e confirmação antes de criar
+- [x] Testes automatizados com pytest (rolador e ficha)
 
 **Próximas (Fase 1)**
-- [ ] Modificadores na expressão (`2d6+3`, `1d20-1`)
-- [ ] Fichas salvas em JSON
-- [ ] Menu de terminal e resumo para o mestre
+- [ ] Salvar e carregar fichas em JSON
+- [ ] Resumo do mestre, com uma linha por ficha
 - [ ] Teste de atributo a partir da ficha
+- [ ] Menu principal com todas as opções
 
 **Planejadas**
 - [ ] Cadastro e login, com papéis de mestre e jogador
 - [ ] Campanhas, com entrada de jogadores por código
 - [ ] Edição de ficha e rolagem a partir dela, com histórico
 - [ ] Painel do mestre com resumo das fichas e rolagens recentes
-- [ ] Sistemas: Kids on Bikes, D&D 5e e Daggerheart
+- [ ] Sistemas: D&D 5e e Daggerheart
 
 ## Começando
 
@@ -65,6 +66,7 @@ python -m venv .venv
 source .venv/bin/activate        # Linux e macOS
 
 pip install -r requirements.txt
+python terminal/main.py          # cria uma ficha pelo terminal
 python terminal/dados.py         # roda um exemplo do rolador
 ```
 
@@ -79,12 +81,13 @@ pytest -v
 ```python
 from dados import rolar_dados
 
-total, rolagens = rolar_dados("2d6")
-print(rolagens)   # por exemplo: [4, 2]
-print(total)      # por exemplo: 6
+total, rolagens, modificador = rolar_dados("2d6+3")
+print(rolagens)      # por exemplo: [4, 5]
+print(modificador)   # 3
+print(total)         # 12 (soma dos dados mais o modificador)
 ```
 
-A função devolve o **total** e a **lista com cada dado**. Se a entrada for inválida, levanta `ValueError` com uma mensagem explicativa:
+A função devolve o **total** (já com o modificador), a **lista com cada dado** e o **modificador**. Se a entrada for inválida, levanta `ValueError` com uma mensagem explicativa:
 
 ```python
 try:
@@ -97,12 +100,44 @@ except ValueError as erro:
 |---|---|
 | `2d6`, `D8` | Aceita, em maiúscula ou minúscula |
 | `d20` | Aceita, e vale 1 dado |
+| `2d6+3`, `1d20-1`, `2d6 + 3` | Aceita, com o modificador somado uma vez ao total |
 | `abc`, `d`, `2d`, `2dx`, `2d6d3` | Recusada: formato inválido |
-| `0d6`, `-2d6` | Recusada: quantidade menor que 1 |
+| `2d6+`, `2d6+x`, `d20+3-1` | Recusada: formato inválido |
+| `-2d6`, `2d-6` | Recusada: formato inválido |
+| `0d6` | Recusada: quantidade menor que 1 |
 | `31d6` | Recusada: mais de 30 dados |
-| `d1` | Recusada: menos de 2 lados |
+| `d1`, `d0` | Recusada: menos de 2 lados |
 | `2d101` | Recusada: mais de 100 lados |
-| `2d6+3` | Ainda não suportada |
+
+## Criando uma ficha
+
+Execute `python terminal/main.py`. O programa pergunta, um campo por vez:
+
+- Nome do personagem e nome do jogador (obrigatórios)
+- Idade (só números)
+- Medo e motivação
+- Defeitos, separados por vírgula
+- O dado de cada atributo: luta, fuga, mente, músculo, charme e garra
+
+Se alguma resposta for inválida, a pergunta se repete. Cada atributo usa um dado diferente entre `d4`, `d6`, `d8`, `d10`, `d12` e `d20`. No fim, o programa mostra a ficha e pede confirmação (`s` ou `n`) antes de criá-la. Por enquanto a ficha ainda **não é salva** em arquivo, o que vem na próxima etapa.
+
+Uma ficha é um dicionário:
+
+```python
+{
+    "nome": "Carlos",
+    "jogador": "Fulano",
+    "sistema": "kids-on-bikes",
+    "idade": 15,
+    "medo": "Altura",
+    "motivacao": "Ajudar a família",
+    "defeitos": ["Teimoso", "Medroso"],
+    "atributos": {
+        "luta": "d20", "fuga": "d12", "mente": "d10",
+        "musculo": "d8", "charme": "d6", "garra": "d4",
+    },
+}
+```
 
 ## Tecnologias
 
@@ -128,17 +163,7 @@ except ValueError as erro:
 
 A rolagem acontece **no servidor**, para o histórico ser confiável.
 
-Cada sistema de RPG tem campos diferentes, então a ficha guarda os dados comuns em colunas e os atributos específicos em um campo JSON. Exemplo ilustrativo:
-
-```json
-{
-  "nome": "Mira",
-  "sistema": "kids-on-bikes",
-  "pv": 12,
-  "atributos": { "Brains": "d8", "Brawn": "d4" },
-  "habilidades": ["Furtiva", "Corajosa"]
-}
-```
+Cada sistema de RPG tem campos diferentes, então a ficha guarda os dados comuns em colunas e os atributos específicos em um campo JSON.
 
 ## Estrutura do projeto
 
@@ -147,10 +172,13 @@ fichas-rpg/
   README.md
   requirements.txt
   pytest.ini
-  terminal/          # Fase 1: lógica em Python, sem interface
+  terminal/          # Fase 1: lógica em Python, sem interface web
     dados.py         # rolador de dados
+    fichas.py        # regras e criação da ficha
+    main.py          # menu de terminal
   tests/             # testes automatizados
     test_dados.py
+    test_fichas.py
   docs/              # diário de bordo e documentação do processo
 ```
 
@@ -164,7 +192,12 @@ Na Fase 3 nasce a pasta `web/`, com a aplicação Flask, as páginas e os arquiv
 | Flask | Framework pequeno, em que cada peça fica visível |
 | SQLite | Um arquivo só, sem servidor, com SQL de verdade |
 | Ficha com dados em JSON | Cada sistema tem campos diferentes |
+| Ficha como dicionário | Converte direto para JSON e é simples de começar |
+| Chaves em minúsculas e sem acento | Mais fáceis de digitar no código e com menos erros |
+| Interpretação da expressão com regex | Descreve o formato inteiro de uma vez e recusa o que não bate |
+| `interpretar` separada de `rolar_dados` | Cada função faz uma coisa, o que facilita testar e reaproveitar |
 | Validação com `ValueError` | A função avisa o erro e quem chama decide o que mostrar |
+| Menu pergunta de novo, função valida | O menu cuida da conversa, e `criar_ficha` é a última barreira para quando os dados vierem de outro lugar |
 | Limites de 30 dados e 100 lados | Evitam entradas absurdas e abuso do servidor |
 | Rolagem no servidor | Histórico confiável, sem trapaça pelo navegador |
 | Computador primeiro, telas menores depois | A maioria das mesas online roda no desktop |
@@ -173,7 +206,7 @@ Na Fase 3 nasce a pasta `web/`, com a aplicação Flask, as páginas e os arquiv
 ## Roadmap
 
 - [x] **Fase 0:** ambiente, Git e repositório
-- [ ] **Fase 1:** rolador, fichas em JSON, menu de terminal e testes
+- [ ] **Fase 1:** rolador, ficha, JSON, resumo do mestre, menu de terminal e testes
 - [ ] **Fase 2:** banco de dados com SQLite
 - [ ] **Fase 3:** API com Flask, testada sem interface
 - [ ] **Fase 4:** frontend com ficha interativa
