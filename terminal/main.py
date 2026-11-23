@@ -1,5 +1,6 @@
 from dados import rolar_dados
 from fichas import criar_ficha, ATRIBUTOS, DADOS_VALIDOS
+from armazenamento import adicionar_ficha
 
 
 def pedir_texto(pergunta):
@@ -47,7 +48,7 @@ def pedir_atributos():
 
 
 def confirmar(pergunta):
-    #Pergunta s/n até receber uma resposta válida. Devolve True para sim e False para não."""
+    #Pergunta s/n até receber uma resposta válida. Devolve True para sim e False para não.
     while True:
         resposta = input(f"{pergunta} (s/n): ").strip().lower()
         if resposta in ("s", "sim"):
@@ -86,12 +87,10 @@ def menu_criar_ficha():
 
     try:
         ficha = criar_ficha(nome, jogador, idade, medo, motivacao, defeitos, atributos)
+        adicionar_ficha(ficha)
+        print(f"Ficha de nome '{nome}' criada!")
     except ValueError as erro:
         print(f"Erro: {erro}")
-        return
-    
-    print(f"Ficha de {ficha['nome']} criada!")
-
-
+        
 if __name__ == "__main__":
     menu_criar_ficha()
