@@ -221,3 +221,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+.vscode/
+.pytest_cache/
+terminal/fichas.json
