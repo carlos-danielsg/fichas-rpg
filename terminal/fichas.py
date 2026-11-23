@@ -15,3 +15,10 @@ def criar_ficha(nome, jogador, idade, medo, motivacao, defeitos, atributos):
         "defeitos": defeitos,
         "atributos": atributos,
     }
+
+def resumo(ficha):
+    partes = []
+    for atributo in ATRIBUTOS:
+        dado = ficha["atributos"][atributo]
+        partes.append(f"{atributo}: {dado.upper()}")
+    return f"{ficha['nome']} | " + ", ".join(partes)
