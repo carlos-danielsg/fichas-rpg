@@ -38,11 +38,11 @@ def rolar_dados(expressao):
         valor = random.randint(1, lados)
         resultados.append(valor)
     
-    return sum(resultados) + modificador, resultados
+    return sum(resultados) + modificador, resultados, modificador
 
 if __name__ == "__main__":
     try:
-        total, rolagens = rolar_dados("ad20")
-        print(f"Rolagens: {rolagens} | Total: {total}")
+        total, rolagens, modificador = rolar_dados("1d20 + 6")
+        print(f"Rolagens: {rolagens} | Modificador: {modificador:+d} |Total: {total}\n")
     except ValueError as erro:
         print(f"Erro: {erro}") 
