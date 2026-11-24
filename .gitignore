@@ -225,3 +225,4 @@ __marimo__/
 .vscode/
 .pytest_cache/
 terminal/fichas.json
+web/fichas.db
