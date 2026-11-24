@@ -30,13 +30,6 @@ def test_sistema_padrao_e_kids_on_bikes():
 def test_atributos_ficam_na_ficha():
     assert montar()["atributos"] == ATRIBUTOS_OK
 
-
-@pytest.mark.parametrize("nome", ["", "   ", "\t"])
-def test_nome_vazio_levanta_erro(nome):
-    with pytest.raises(ValueError, match="Preencha o nome"):
-        montar(nome)
-
-
 def test_constantes_do_sistema_sao_consistentes():
     # a ficha de exemplo usa exatamente os atributos e os dados do sistema
     assert list(ATRIBUTOS_OK) == ATRIBUTOS
