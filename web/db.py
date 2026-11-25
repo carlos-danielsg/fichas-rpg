@@ -1,13 +1,16 @@
 import sqlite3
+from pathlib import Path
 
-def conectar(caminho="fichas.db"):
+PASTA = Path(__file__).parent
+
+def conectar(caminho=PASTA /"fichas.db"):
     conexao = sqlite3.connect(caminho)
     conexao.execute("PRAGMA foreign_keys = ON")
     return conexao
 
-def criar_banco(caminho="fichas.db"):
+def criar_banco(caminho=PASTA / "fichas.db"):
     conexao = conectar(caminho)
-    with open("schema.sql", encoding="utf-8") as arquivo:
+    with open(PASTA / "schema.sql", encoding="utf-8") as arquivo:
         conexao.executescript(arquivo.read())
     conexao.commit()
     conexao.close()
