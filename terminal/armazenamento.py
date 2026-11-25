@@ -1,28 +1,6 @@
 import json
-from pathlib import Path
 from web.db import conectar
 import sqlite3
-
-ARQUIVO = Path(__file__).parent / "fichas.json"
-
-def carregar_fichas():
-    try:
-        with open(ARQUIVO, encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-def salvar_fichas(fichas):
-    with open(ARQUIVO, "w", encoding="utf-8") as f:
-        json.dump(fichas, f, ensure_ascii= False, indent= 2)
-
-def adicionar_ficha(ficha):
-    fichas = carregar_fichas()
-    nome = ficha["nome"].strip().lower()
-    if nome in fichas:
-        raise ValueError(f"A ficha com o nome '{nome}' já existe.")
-    fichas[nome] = ficha
-    salvar_fichas(fichas)
 
 def criar_ficha(nome, dono_id, campanha_id, pv_max, atributos):
     conexao = conectar()
@@ -51,3 +29,40 @@ def buscar_ficha(ficha_id):
     ficha = dict(linha)
     ficha["dados"] = json.loads(ficha["dados"])
     return ficha
+
+def listar_fichas_campanha(campanha_id):
+    conexao = conectar()
+    conexao.row_factory = sqlite3.Row
+    linhas = conexao.execute(
+        "SELECT fichas.id, fichas.nome, fichas.pv_atual, fichas.pv_max, fichas.dados, "
+        "usuarios.nome AS nome_jogador "
+        "FROM fichas "
+        "JOIN usuarios ON fichas.dono_id = usuarios.id "
+        "WHERE fichas.campanha_id = ?",
+        (campanha_id,),
+    ).fetchall()
+    conexao.close()
+
+    resultado = []
+    for linha in linhas:
+        ficha = dict(linha)
+        ficha["dados"] = json.loads(ficha["dados"])
+        resultado.append(ficha)
+    return resultado
+
+def registrar_rolagem(ficha_id, expressao, dados_sorteados, total):
+    ficha = buscar_ficha(ficha_id)
+    if ficha is None:
+        raise ValueError(f"Ficha {ficha_id} não existe!")
+    resultado = ",".join(str(dado) for dado in dados_sorteados)
+
+    conexao = conectar()
+    cursor = conexao.execute(
+        "INSERT INTO rolagens (ficha_id, campanha_id, expressao, resultado, total) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (ficha_id, ficha["campanha_id"], expressao, resultado, total),
+    )
+    conexao.commit()
+    novo_id = cursor.lastrowid
+    conexao.close()
+    return novo_id
